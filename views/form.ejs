@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+
+    <h1>Nifty Bank time series.</h1>
+    <p>**Please select week Dates between 14-Mar-17 and 24-Mar-19.</p>
+
+    <form action="/" method="POST" class="form-inline">
+
+        <label class="mr-sm-1">Start Date</label>
+        <input type="date" class="form-control-sm mb-0 mr-sm-3 col-sm-2" name="startDate">
+
+
+        <label class="mr-sm-1">End Date</label>
+        <input type="date" class="form-control-sm mb-0 mr-sm-3 col-sm-2" name="endDate">
+
+
+        <select name="expiry" class="form-control-sm mb-0 mr-sm-3 col-sm-2">
+            <option value="Nearest">Nearest</option>
+            <option value="Next-to-Nearest">Next to Nearest</option>
+            <option value="Farthest">Farthest</option>
+        </select>
+
+        <select name="priceType" class="form-control-sm mb-0 mr-sm-3 col-sm-2">
+            <option value="Open">Open</option>
+            <option value="High">High</option>
+            <option value="Low">Low</option>
+            <option value="Close">Close</option>
+        </select>
+
+        <button type="submit" class="btn-sm btn-primary mb-0">Calculate</button>
+
+    </form>
+</body>
+
+</html>
