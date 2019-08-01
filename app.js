@@ -57,108 +57,108 @@ app.post("/", async function (req, res) {
     console.log(expiry);
     console.log(priceType);
 
-    async function calc() {
-        //query to get Dates between the starting and ending date.
-        async function cal() {
-            await mysqlConnection.query(`SELECT Date FROM bank_nifty WHERE Date BETWEEN '${startDate}' AND '${endDate}'`, (err, rows, fields) => {
+
+    //func to get Dates between the starting and ending date.
+    function calDates() {
+        await mysqlConnection.query(`SELECT Date FROM bank_nifty WHERE Date BETWEEN '${startDate}' AND '${endDate}'`, (err, rows, fields) => {
+            if (err) {
+                console.log(err);
+            }
+
+            else {
+                tradingDates = JSON.parse(JSON.stringify(rows));
+                console.log('first one .......... ' + tradingDates.length);
+            }
+        })
+    }
+
+    for (let index = 0; index < tradingDates.length; index++) {
+
+        tradingDate = tradingDates[index][Date];
+        console.log(tradingDate);
+        console.log("For Trading day : " + tradingDate);
+
+        async function calculation() {
+
+            //Getting expiry dates for the trading date.
+            mysqlConnection.query(`SELECT distinct Expiry FROM bank_nifty_calls WHERE Date = '${tradingDate}'`, (err, rows, fields) => {
                 if (err) {
                     console.log(err);
                 }
 
                 else {
-                    tradingDates = JSON.parse(JSON.stringify(rows));
-                    console.log('first one .......... ' + tradingDates.length);
+                    expiryDates[index] = JSON.parse(JSON.stringify(rows));
                 }
             })
 
-            for (let index = 0; index < tradingDates.length; index++) {
+            await Waiter(1000);
+            //Initialising the expiryDate according to Expiry type.
+            switch (expiry) {
+                case 'Nearest':
+                    expiryDate = expiryDates[index][0]["Expiry"];
+                    break;
+                case 'Next-to-Nearest':
+                    expiryDate = expiryDates[index][1]["Expiry"];
+                    break;
 
-                tradingDate = tradingDates[index][Date];
-                console.log(tradingDate);
-                console.log("For Trading day : " + tradingDate);
+                case 'Farthest':
+                    expiryDate = expiryDates[index][2]["Expiry"];
+                    break;
 
-                async function calculation() {
-
-                    //Getting expiry dates for the trading date.
-                    mysqlConnection.query(`SELECT distinct Expiry FROM bank_nifty_calls WHERE Date = '${tradingDate}'`, (err, rows, fields) => {
-                        if (err) {
-                            console.log(err);
-                        }
-
-                        else {
-                            expiryDates[index] = JSON.parse(JSON.stringify(rows));
-                        }
-                    })
-
-                    await Waiter(1000);
-                    //Initialising the expiryDate according to Expiry type.
-                    switch (expiry) {
-                        case 'Nearest':
-                            expiryDate = expiryDates[index][0]["Expiry"];
-                            break;
-                        case 'Next-to-Nearest':
-                            expiryDate = expiryDates[index][1]["Expiry"];
-                            break;
-
-                        case 'Farthest':
-                            expiryDate = expiryDates[index][2]["Expiry"];
-                            break;
-
-                        default:
-                            expiryDate = expiryDates[index][0]["Expiry"];
-                            break;
-                    }
-
-                    //Mysql for returning nifty index.
-                    mysqlConnection.query(`SELECT ${priceType} FROM bank_nifty WHERE Date = '${tradingDate}'`, (err, rows, fields) => {
-                        if (err) {
-                            console.log(err);
-                        }
-
-                        else {
-                            niftyIndex[index] = JSON.parse(JSON.stringify(rows))[0][`${priceType}`];
-                        }
-                    })
-
-                    await Waiter(200);
-                    //initialising Closes(Low) and Closes(high).
-                    closesLow[index] = Math.floor(niftyIndex[index] / 100) * 100;
-                    closesHigh[index] = Math.ceil(niftyIndex[index] / 100) * 100;
-
-                    //Calulating Open Price (put)
-                    mysqlConnection.query("select " + `${priceType}` + " from bank_nifty_puts where Date='" + `${tradingDate}` + "' and Expiry='" + `${expiryDate}` + "' and `Strike Price`= " + `${closesLow[index]}` + " ;", (err, rows, fields) => {
-                        if (err) {
-                            console.log(err);
-                        }
-
-                        else {
-                            pricePut[index] = JSON.parse(JSON.stringify(rows[0][`${priceType}`])); //
-                        }
-                    })
-
-                    //Calulating Open Price (call)
-                    mysqlConnection.query("select " + `${priceType}` + " from bank_nifty_calls where Date='" + `${tradingDate}` + "' and Expiry='" + `${expiryDate}` + "' and `Strike Price`= " + `${closesHigh[index]}` + ";", (err, rows, fields) => {
-                        if (err) {
-                            console.log(err);
-                        }
-
-                        else {
-                            priceCall[index] = JSON.parse(JSON.stringify(rows[0][`${priceType}`])); //
-                        }
-                    })
-
-                    await Waiter(200);
-                    sum[index] = parseFloat(pricePut[index]) + parseFloat(priceCall[index]);
-                }
-                calculation();
-
-                console.log("End of one Date ...................................................");
-
-
+                default:
+                    expiryDate = expiryDates[index][0]["Expiry"];
+                    break;
             }
-        }
-        await cal();
 
+            //Mysql for returning nifty index.
+            mysqlConnection.query(`SELECT ${priceType} FROM bank_nifty WHERE Date = '${tradingDate}'`, (err, rows, fields) => {
+                if (err) {
+                    console.log(err);
+                }
+
+                else {
+                    niftyIndex[index] = JSON.parse(JSON.stringify(rows))[0][`${priceType}`];
+                }
+            })
+
+            await Waiter(200);
+            //initialising Closes(Low) and Closes(high).
+            closesLow[index] = Math.floor(niftyIndex[index] / 100) * 100;
+            closesHigh[index] = Math.ceil(niftyIndex[index] / 100) * 100;
+
+            //Calulating Open Price (put)
+            mysqlConnection.query("select " + `${priceType}` + " from bank_nifty_puts where Date='" + `${tradingDate}` + "' and Expiry='" + `${expiryDate}` + "' and `Strike Price`= " + `${closesLow[index]}` + " ;", (err, rows, fields) => {
+                if (err) {
+                    console.log(err);
+                }
+
+                else {
+                    pricePut[index] = JSON.parse(JSON.stringify(rows[0][`${priceType}`])); //
+                }
+            })
+
+            //Calulating Open Price (call)
+            mysqlConnection.query("select " + `${priceType}` + " from bank_nifty_calls where Date='" + `${tradingDate}` + "' and Expiry='" + `${expiryDate}` + "' and `Strike Price`= " + `${closesHigh[index]}` + ";", (err, rows, fields) => {
+                if (err) {
+                    console.log(err);
+                }
+
+                else {
+                    priceCall[index] = JSON.parse(JSON.stringify(rows[0][`${priceType}`])); //
+                }
+            })
+
+            await Waiter(200);
+            sum[index] = parseFloat(pricePut[index]) + parseFloat(priceCall[index]);
+        }
+        calculation();
+
+        console.log("End of one Date ...................................................");
+
+
+    }
+
+    function loadTable() {
 
         res.render("table", {
             tradingDates: tradingDates,
@@ -174,7 +174,6 @@ app.post("/", async function (req, res) {
 
         });
 
-
     }
     calc();
 
@@ -183,8 +182,6 @@ app.post("/", async function (req, res) {
     // console.log(expiryDate);
     // console.log(pricePut);
     // console.log(tradingDates);
-
-
 
 
 
