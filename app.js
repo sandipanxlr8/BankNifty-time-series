@@ -1,16 +1,17 @@
+const compression = require('compression');
 const express = require("express");
 const bodyparser = require("body-parser");
 const ejs = require("ejs");
 const mysqlConnection = require("./DBconnection");
 
 const app = express();
+app.use(compression());
 
 app.use(express.static("public"));
 app.use(bodyparser.urlencoded({ extended: true }));
 app.set('view engine', 'ejs');
 
 //Public variables
-var Data;
 var tradingDate = [];
 var expiryDate = [];
 var niftyIndex = [];
@@ -51,10 +52,6 @@ app.post("/", async function (req, res) {
     var endDate = formatDate(new Date(Date.parse((req.body.endDate))));
     var expiry = req.body.expiry;
     var priceType = req.body.priceType;
-    console.log(startDate);
-    console.log(endDate);
-    console.log(expiry);
-    console.log(priceType);
 
     //Getting expiry dates for the trading date.
     mysqlConnection.query("select" +
@@ -70,7 +67,6 @@ app.post("/", async function (req, res) {
                 console.log(err);
             }
             else {
-                console.log(rows[0]);
 
                 for (let i = 0; i < rows.length; i++) {
                     tradingDate[i] = formatDate(new Date(JSON.parse(JSON.stringify(rows[i]['Date']))));
@@ -94,10 +90,16 @@ app.post("/", async function (req, res) {
                     priceCall: priceCall,
                     sum: sum
                 });
+
+
             }
         });
 });
 
-app.listen(3000, function () {
-    console.log("App started at port 3000");
+let port = process.env.PORT;
+if (port == null || port == "") {
+    port = 3000;
+}
+app.listen(port, function () {
+    console.log("App started");
 });
